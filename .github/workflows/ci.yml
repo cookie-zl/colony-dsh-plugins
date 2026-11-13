@@ -34,6 +34,8 @@ jobs:
               const fail = (m) => { console.error('  ✗ ' + m); process.exit(1); };
               if (!j.name || !j.version) fail('$name: 缺 name/version');
               if (j.license !== 'Apache-2.0') fail('$name: license 必须是 Apache-2.0');
+              if (!j.name.startsWith('@colony/dsh-')) fail('$name: 包名必须遵循 @colony/dsh-<name>（dsh 插件生态约定）');
+              if (!(j.keywords || []).includes('dsh-plugin')) fail('$name: keywords 必须含 dsh-plugin，否则市场索引不到');
               if (!j.dsh?.bundle?.patch) fail('$name: 必须声明 dsh.bundle.patch，否则装进 profile 也不会生效');
               if (!fs.existsSync('$d/' + j.dsh.bundle.patch.replace('./', ''))) fail('$name: patch 文件不存在');
               if (!fs.existsSync('$d/index.js')) fail('$name: 缺 index.js');

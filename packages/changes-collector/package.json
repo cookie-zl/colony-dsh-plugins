@@ -1,5 +1,5 @@
 {
-  "name": "@colony/changes-collector",
+  "name": "@colony/dsh-changes-collector",
   "version": "0.1.0",
   "description": "把 workspace/changes 的轮级摘要与逐文件 diff 落成卷里的 JSON，供控制面收进对象层",
   "type": "module",
@@ -13,15 +13,23 @@
     "dsh",
     "dsh-plugin",
     "workspace",
-    "artifacts"
+    "artifacts",
+    "deepseek-harness"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "dsh": ">=0.2.0 <0.3.0"
     }
   },
   "engines": {
-    "dsh": ">=0.2.0 <0.3.0"
+    "dsh": ">=0.2.0 <0.3.0",
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",

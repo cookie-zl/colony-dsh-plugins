@@ -10,7 +10,7 @@
 #   maxTurns  每个会话保留多少轮（控制面收走就删，这个上限是给「控制面没在跑」兜底）
 - insert:
     - id: changes-collector
-      name: '@colony/changes-collector'
+      name: '@colony/dsh-changes-collector'
       config:
         maxFiles: 200
         maxBytes: 1048576

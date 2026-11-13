@@ -1,5 +1,5 @@
 {
-  "name": "@colony/client-ui-assistants",
+  "name": "@colony/dsh-client-ui-assistants",
   "version": "0.1.0",
   "description": "在 dsh 侧栏注册「助理」面板：把钉钉/飞书机器人接到一个固定会话上",
   "type": "module",
@@ -22,7 +22,8 @@
   "keywords": [
     "dsh",
     "dsh-plugin",
-    "dsh-client-plugin"
+    "dsh-client-plugin",
+    "deepseek-harness"
   ],
   "dsh": {
     "bundle": {
@@ -35,10 +36,17 @@
         "@deepseek-ai/dsh-client-ui-sidebar"
       ],
       "platform": "web"
+    },
+    "compatibility": {
+      "dsh": ">=0.2.0 <0.3.0"
     }
   },
   "engines": {
-    "dsh": ">=0.2.0 <0.3.0"
+    "dsh": ">=0.2.0 <0.3.0",
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
