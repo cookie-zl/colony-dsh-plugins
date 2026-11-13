@@ -1,0 +1,6 @@
+# 组合包被 profile 引用时应用的配置层。
+# 与 client-ui-market 同理：host 侧是空壳，但必须有这一行，
+# dsh-client-modules 才会把 lib/client.js 下发给浏览器。
+- insert:
+    - id: client-ui-assistants
+      name: '@my-dsh/client-ui-assistants'

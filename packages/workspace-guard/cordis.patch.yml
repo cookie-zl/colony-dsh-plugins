@@ -1,0 +1,10 @@
+# 组合包被 profile 引用时应用的配置层。
+# 按「包名」引用自身：安装后由 Node 的模块解析找到代码，不依赖相对路径。
+#
+# root 是容器内的工作区根目录，必须是一个**持久挂载**（compose 里 bind 的是宿主的
+# deploy/compose/workspace-team-<team>/）。换成别处就等于把产物放回可写层。
+- insert:
+    - id: workspace-guard
+      name: '@my-dsh/workspace-guard'
+      config:
+        root: '/workspace'

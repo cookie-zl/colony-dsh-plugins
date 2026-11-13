@@ -1,0 +1,13 @@
+# 依赖与产物
+node_modules/
+**/node_modules/
+*.tgz
+
+# 本地配置与密钥
+.env
+.env.*
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store

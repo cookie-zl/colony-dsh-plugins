@@ -1,0 +1,30 @@
+{
+  "name": "@my-dsh/market-skill",
+  "version": "0.1.0",
+  "description": "从控制面 API 加载团队技能，容器内不落任何技能文件",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "skill"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhang-zi-long/dsh-plugins.git",
+    "directory": "packages/market-skill"
+  }
+}

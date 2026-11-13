@@ -1,0 +1,31 @@
+{
+  "name": "@my-dsh/changes-collector",
+  "version": "0.1.0",
+  "description": "把 workspace/changes 的轮级摘要与逐文件 diff 落成卷里的 JSON，供控制面收进对象层",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "workspace",
+    "artifacts"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhang-zi-long/dsh-plugins.git",
+    "directory": "packages/changes-collector"
+  }
+}

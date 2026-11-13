@@ -1,0 +1,6 @@
+# 组合包被 profile 引用时应用的配置层。
+# client 插件的 host 侧是空壳，但必须有这一行，dsh-client-modules 才会把这个包
+# 认成「已启用的 Loader entry」，进而把 lib/client.js 下发给浏览器。
+- insert:
+    - id: client-ui-market
+      name: '@my-dsh/client-ui-market'

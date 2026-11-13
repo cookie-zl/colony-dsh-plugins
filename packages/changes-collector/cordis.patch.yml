@@ -1,0 +1,17 @@
+# 组合包被 profile 引用时应用的配置层。
+# 按「包名」引用自身：安装后由 Node 的模块解析找到代码，不依赖相对路径。
+#
+# 依赖 @deepseek-ai/dsh-workspace-changes 提供 workspaceChanges 服务；没装它时本插件
+# 就一直等着（cordis 的注入语义），不会让实例起不来。
+#
+#   dir       抄写目录，默认 <DSH_HOME>/changes（数据卷内，容器重建后仍在）
+#   maxFiles  单轮最多记多少个文件的 diff
+#   maxBytes  单个 JSON 的体积上限，超了先丢 hunks、再截断清单
+#   maxTurns  每个会话保留多少轮（控制面收走就删，这个上限是给「控制面没在跑」兜底）
+- insert:
+    - id: changes-collector
+      name: '@my-dsh/changes-collector'
+      config:
+        maxFiles: 200
+        maxBytes: 1048576
+        maxTurns: 200
