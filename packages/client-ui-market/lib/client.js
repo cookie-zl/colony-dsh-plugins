@@ -12,7 +12,7 @@
  * 不直连控制面：控制面 token 不能进浏览器。
  */
 window.__ModuleLoader__.load({
-	id: '@my-dsh/client-ui-market',
+	id: '@colony/client-ui-market',
 	factory: (require) => {
 		var module = { exports: {} }
 		var exports = module.exports

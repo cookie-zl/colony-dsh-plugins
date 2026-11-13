@@ -3,4 +3,4 @@
 # dsh-client-modules 才会把 lib/client.js 下发给浏览器。
 - insert:
     - id: client-ui-assistants
-      name: '@my-dsh/client-ui-assistants'
+      name: '@colony/client-ui-assistants'

@@ -2,4 +2,4 @@
 # 按「包名」引用自身：安装后由 Node 的模块解析找到代码，不依赖相对路径。
 - insert:
     - id: market-skill
-      name: '@my-dsh/market-skill'
+      name: '@colony/market-skill'

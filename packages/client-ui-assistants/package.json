@@ -1,5 +1,5 @@
 {
-  "name": "@my-dsh/client-ui-assistants",
+  "name": "@colony/client-ui-assistants",
   "version": "0.1.0",
   "description": "在 dsh 侧栏注册「助理」面板：把钉钉/飞书机器人接到一个固定会话上",
   "type": "module",
@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhang-zi-long/dsh-plugins.git",
+    "url": "https://github.com/zhang-zi-long/colony-plugins.git",
     "directory": "packages/client-ui-assistants"
   }
 }

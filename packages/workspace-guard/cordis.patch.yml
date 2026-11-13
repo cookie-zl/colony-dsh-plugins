@@ -5,6 +5,6 @@
 # deploy/compose/workspace-team-<team>/）。换成别处就等于把产物放回可写层。
 - insert:
     - id: workspace-guard
-      name: '@my-dsh/workspace-guard'
+      name: '@colony/workspace-guard'
       config:
         root: '/workspace'

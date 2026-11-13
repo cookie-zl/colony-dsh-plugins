@@ -25,7 +25,7 @@ make reload
 
 # 只想看产物长什么样
 cd plugins/hello-dsh && npm pack
-# → my-dsh-hello-dsh-0.1.0.tgz（scope 的 @ 会去掉）
+# → colony-hello-dsh-0.1.0.tgz（scope 的 @ 会去掉）
 ```
 
 `make reload` 之后，日志里应该有：

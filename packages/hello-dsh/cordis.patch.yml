@@ -2,4 +2,4 @@
 # 这里按「包名」引用自身，而不是相对路径——安装后由 Node 的模块解析找到代码。
 - insert:
     - id: hello-dsh
-      name: '@my-dsh/hello-dsh'
+      name: '@colony/hello-dsh'

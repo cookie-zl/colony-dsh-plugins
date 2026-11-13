@@ -1,5 +1,5 @@
 {
-  "name": "@my-dsh/market-skill",
+  "name": "@colony/market-skill",
   "version": "0.1.0",
   "description": "从控制面 API 加载团队技能，容器内不落任何技能文件",
   "type": "module",
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhang-zi-long/dsh-plugins.git",
+    "url": "https://github.com/zhang-zi-long/colony-plugins.git",
     "directory": "packages/market-skill"
   }
 }

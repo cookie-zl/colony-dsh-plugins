@@ -1,4 +1,4 @@
-# dsh-plugins
+# colony-plugins
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（dsh）用的插件集合。
 纯 ESM，无构建步骤，`apply(ctx)` 直接跑在 dsh 进程里。
@@ -7,26 +7,26 @@
 
 | 包 | 一句话 | 依赖 |
 |---|---|---|
-| `@my-dsh/workspace-guard` | 把新建工作区强制落在 `/workspace/<name>`，会话 cwd 与产物都在持久挂载里；顺带把 headless 建的会话补登记进侧栏 | 无 |
-| `@my-dsh/changes-collector` | 把 `workspace/changes` 的轮级摘要与逐文件 diff 落成卷里的 JSON，供控制面收进对象层 | 无 |
-| `@my-dsh/market-skill` | 从控制面 API 加载团队技能，容器内不落任何技能文件 | 控制面 API |
-| `@my-dsh/client-ui-market` | 侧栏「市场」面板：技能与连接器的浏览、安装、启停 | 控制面 API |
-| `@my-dsh/client-ui-assistants` | 侧栏「助理」面板：把钉钉 / 飞书机器人接到一个固定会话上 | 控制面 API |
-| `@my-dsh/hello-dsh` | 样板插件：注册一个 `hello_dsh` 工具 | 无 |
+| `@colony/workspace-guard` | 把新建工作区强制落在 `/workspace/<name>`，会话 cwd 与产物都在持久挂载里；顺带把 headless 建的会话补登记进侧栏 | 无 |
+| `@colony/changes-collector` | 把 `workspace/changes` 的轮级摘要与逐文件 diff 落成卷里的 JSON，供控制面收进对象层 | 无 |
+| `@colony/market-skill` | 从控制面 API 加载团队技能，容器内不落任何技能文件 | 控制面 API |
+| `@colony/client-ui-market` | 侧栏「市场」面板：技能与连接器的浏览、安装、启停 | 控制面 API |
+| `@colony/client-ui-assistants` | 侧栏「助理」面板：把钉钉 / 飞书机器人接到一个固定会话上 | 控制面 API |
+| `@colony/hello-dsh` | 样板插件：注册一个 `hello_dsh` 工具 | 无 |
 
 ## 安装
 
 单个插件直接指目录（开发时最顺手）：
 
 ```bash
-dsh plugin add /path/to/dsh-plugins/packages/workspace-guard
+dsh plugin add /path/to/colony-plugins/packages/workspace-guard
 ```
 
 打成 tarball 再装（跟镜像里的做法一致）：
 
 ```bash
 cd packages/workspace-guard && npm pack
-dsh plugin add ./my-dsh-workspace-guard-0.1.0.tgz
+dsh plugin add ./colony-workspace-guard-0.1.0.tgz
 ```
 
 一次装全部：

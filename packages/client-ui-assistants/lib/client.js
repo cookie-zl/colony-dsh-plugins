@@ -8,7 +8,7 @@
  * 不直连控制面：控制面 token 不能进浏览器，而且平台凭据只在服务端解密。
  */
 window.__ModuleLoader__.load({
-	id: '@my-dsh/client-ui-assistants',
+	id: '@colony/client-ui-assistants',
 	factory: (require) => {
 		var module = { exports: {} }
 		var exports = module.exports
