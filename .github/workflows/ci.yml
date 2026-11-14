@@ -38,7 +38,8 @@ jobs:
               if (!(j.keywords || []).includes('dsh-plugin')) fail('$name: keywords 必须含 dsh-plugin，否则市场索引不到');
               if (!j.dsh?.bundle?.patch) fail('$name: 必须声明 dsh.bundle.patch，否则装进 profile 也不会生效');
               if (!fs.existsSync('$d/' + j.dsh.bundle.patch.replace('./', ''))) fail('$name: patch 文件不存在');
-              if (!fs.existsSync('$d/index.js')) fail('$name: 缺 index.js');
+              const entry = '$d/' + (j.main || 'index.js');
+              if (!fs.existsSync(entry)) fail('$name: 入口不存在 main=' + j.main);
               console.log('  ✓ ' + j.name + '@' + j.version);
             "
           done
