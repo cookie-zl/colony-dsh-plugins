@@ -67,7 +67,6 @@ window.__ModuleLoader__.load({
 			h1: { fontSize: 18, fontWeight: 500, margin: 0 },
 			sub: { fontSize: 13, opacity: 0.55 },
 			spacer: { flex: 1 },
-			section: { marginTop: 22 },
 			h2: {
 				fontSize: 12,
 				fontWeight: 500,
@@ -76,23 +75,28 @@ window.__ModuleLoader__.load({
 				opacity: 0.5,
 				margin: '0 0 10px',
 			},
-			grid: {
-				display: 'grid',
-				gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-				gap: 10,
-			},
-			card: {
+			/** 助理列表：分行展示，一行一个助理（设置页的常见形态，比卡片更好扫读）。 */
+			list: { display: 'flex', flexDirection: 'column', gap: 8 },
+			row: {
+				display: 'flex',
+				alignItems: 'flex-start',
+				gap: 12,
 				border: '1px solid rgba(127,127,127,.24)',
 				borderRadius: 12,
-				padding: '14px 15px',
-				display: 'flex',
-				flexDirection: 'column',
-				gap: 8,
+				padding: '12px 14px',
 			},
-			cardHead: { display: 'flex', alignItems: 'center', gap: 8 },
-			cardTitle: { fontSize: 14, fontWeight: 500 },
-			cardMeta: { fontSize: 12, opacity: 0.6, lineHeight: 1.6 },
-			cardFoot: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 2 },
+			rowMain: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 },
+			rowTitle: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+			rowMeta: { fontSize: 12, opacity: 0.6, lineHeight: 1.6, wordBreak: 'break-all' },
+			rowActions: {
+				display: 'flex',
+				alignItems: 'center',
+				gap: 6,
+				flexWrap: 'wrap',
+				justifyContent: 'flex-end',
+				flex: '0 0 auto',
+				maxWidth: '46%',
+			},
 			tag: {
 				fontSize: 11,
 				padding: '1px 7px',
@@ -170,21 +174,38 @@ window.__ModuleLoader__.load({
 			table: { width: '100%', borderCollapse: 'collapse', fontSize: 12.5 },
 			th: { textAlign: 'left', fontWeight: 500, opacity: 0.55, padding: '6px 8px', borderBottom: '1px solid rgba(127,127,127,.2)' },
 			td: { padding: '6px 8px', borderBottom: '1px solid rgba(127,127,127,.12)', verticalAlign: 'top' },
-			/** 平台接入卡：两列，窄屏自动一列。 */
-			platformGrid: {
-				display: 'grid',
-				gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-				gap: 10,
-			},
-			platformCard: {
-				border: '1px solid rgba(127,127,127,.24)',
+			/** 一个平台分组：标题行 + 该平台下的助理。 */
+			group: { marginTop: 24 },
+			groupHead: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 },
+			groupTitle: { fontSize: 14, fontWeight: 500 },
+			groupEmpty: {
+				fontSize: 12.5,
+				opacity: 0.5,
+				padding: '14px 15px',
+				border: '1px dashed rgba(127,127,127,.28)',
 				borderRadius: 12,
-				padding: '13px 14px',
-				display: 'flex',
-				flexDirection: 'column',
-				gap: 8,
 			},
-			platformHead: { display: 'flex', alignItems: 'center', gap: 10 },
+			/** 文字按钮：接入说明这类次要动作，不要抢主按钮的视觉重量。 */
+			linkBtn: {
+				font: 'inherit',
+				fontSize: 12.5,
+				padding: '2px 4px',
+				border: 'none',
+				background: 'transparent',
+				color: 'inherit',
+				opacity: 0.55,
+				cursor: 'pointer',
+			},
+			/** 接入说明：默认收起，需要时才展开——首屏只留「有什么助理」。 */
+			detailsBody: {
+				marginTop: 8,
+				padding: '10px 12px',
+				borderRadius: 10,
+				border: '1px solid rgba(127,127,127,.2)',
+				background: 'rgba(127,127,127,.05)',
+				lineHeight: 1.65,
+			},
+
 			platformIcon: (id) => ({
 				width: 32,
 				height: 32,
@@ -380,40 +401,82 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * 平台接入卡：进面板第一眼就知道「支持哪些平台、各自要准备什么」。
-		 * 点卡片直接以该平台预填新建表单，不用先去下拉里选。
+		 * 一个平台分组：标题行（图标 + 名称 + 数量 + 接入说明 + 接入按钮）+ 该平台下的助理卡片。
+		 *
+		 * 为什么不做「支持哪些平台」的大卡片：只有两个平台时，那等于两块占满首屏的说明文字。
+		 * 用户每天来这个面板是为了看/改已有助理，不是读接入文档。所以「有什么」直接摊开，
+		 * 「怎么接」收进 details——需要时点开，不需要时不占地方。
+		 *
+		 * @param {object} props 平台元信息、该平台下的助理、权限与操作回调
+		 * @returns {object} 分组节点
 		 */
-		function PlatformCard({ meta, count, manage, onPick }) {
-			const tagline = meta.id === 'dingtalk'
-				? '企业自建应用 · Stream 长连接，内网也能收'
-				: '企业自建应用 · 事件订阅，回调需公网可达'
-			const steps = meta.id === 'dingtalk'
-				? '需要 Client ID + Client Secret；机器人消息接收模式选 Stream。'
-				: '需要 App ID + Verification Token；还要配群机器人 Webhook 才能回话。'
+		function PlatformGroup({ meta, items, manage, inbound, busy, onAdd, onEdit, onMessages, onToggle, onTest, onDelete }) {
+			const [open, setOpen] = React.useState(false)
+			const count = items.length
+			const isDing = meta.id === 'dingtalk'
+			const need = isDing
+				? '企业自建应用，填 Client ID + Client Secret，机器人「消息接收模式」选 Stream。'
+				: '企业自建应用，填 App ID + Verification Token，事件订阅填下面的地址。'
 			return h(
-				'div',
-				{ style: S.platformCard },
+				'section',
+				{ style: S.group },
 				h(
 					'div',
-					{ style: S.platformHead },
+					{ style: S.groupHead },
 					h(PlatformIcon, { id: meta.id }),
 					h(
 						'div',
-						{ style: { minWidth: 0 } },
-						h('div', { style: { fontSize: 13.5, fontWeight: 500 } }, meta.label),
-						h('div', { style: S.hint }, tagline),
+						{ style: { display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 } },
+						h('span', { style: S.groupTitle }, meta.label),
+						h('span', { style: S.sub }, count ? `${count} 个` : '未接入'),
 					),
-				),
-				h('div', { style: S.hint }, steps),
-				h(
-					'div',
-					{ style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' } },
-					h('span', { style: { ...S.tag, opacity: count ? 0.9 : 0.55 } }, count ? `已接入 ${count} 个` : '未接入'),
 					h('div', { style: S.spacer }),
-					manage
-						? h('button', { type: 'button', style: S.btn(true, false), onClick: () => onPick(meta.id) }, `接入${meta.label}`)
-						: null,
+					h(
+						'button',
+						{
+							type: 'button',
+							style: S.linkBtn,
+							onClick: () => setOpen(!open),
+							'aria-expanded': open,
+						},
+						open ? '接入说明 ▾' : '接入说明 ▸',
+					),
+					manage ? h('button', { type: 'button', style: S.btn(true, false), onClick: () => onAdd(meta.id) }, `接入${meta.label}`) : null,
 				),
+				open
+					? h(
+							'div',
+							{ style: { ...S.detailsBody, marginBottom: 10 } },
+							h('div', null, need),
+							isDing
+								? h('div', { style: { marginTop: 4, ...S.hint } }, '走 Stream 不需要回调地址：服务端主动连钉钉网关，本机也能收。')
+								: h(
+										'div',
+										{ style: { marginTop: 8 } },
+										h(CopyRow, { label: '事件订阅地址', value: inbound?.feishu || inbound?.base || '' }),
+										inbound?.local
+											? h(
+													'div',
+													{ style: { marginTop: 6, ...S.hint } },
+													'这个是本机地址，飞书要公网可达：本地联调需内网穿透（ngrok / cpolar），或用 ASSISTANT_INBOUND_BASE 配成对外域名。',
+												)
+											: null,
+									),
+						)
+					: null,
+				count
+					? h(
+							'div',
+							{ style: S.list },
+							items.map((a) =>
+								h(AssistantCard, { key: a.id, a, meta, manage, busy, onEdit, onMessages, onToggle, onTest, onDelete }),
+							),
+						)
+					: h(
+							'div',
+							{ style: S.groupEmpty },
+							manage ? `还没有${meta.label}助理。点上方右侧「接入${meta.label}」建一个。` : `还没有${meta.label}助理。`,
+						),
 			)
 		}
 
@@ -425,7 +488,7 @@ window.__ModuleLoader__.load({
 			return { color: 'rgba(192,57,43,.95)' }
 		}
 
-		/** 一张助理卡片：信息 + 凭据状态 + 操作。 */
+		/** 一行助理：左边信息（名称 / 机器人 / 群 / 会话 / 凭据），右边操作。 */
 		function AssistantCard({ a, meta, manage, busy, onEdit, onMessages, onToggle, onTest, onDelete }) {
 			const platformLabel = meta ? meta.label : a.platform
 			// 必填项没配 = 回调一定被拒，用红点；可选项用灰点提示缺省行为
@@ -434,37 +497,42 @@ window.__ModuleLoader__.load({
 			const missing = required.filter((c) => !a.credentials?.[c.field])
 			return h(
 				'div',
-				{ style: S.card },
+				{ style: S.row },
 				h(
 					'div',
-					{ style: S.cardHead },
-					h('span', { style: S.cardTitle }, a.name),
-					h('span', { style: S.tag }, platformLabel),
-					h('div', { style: S.spacer }),
-					h('span', { style: { ...S.tag, opacity: a.enabled ? 0.9 : 0.5 } }, a.enabled ? '已启用' : '已停用'),
+					{ style: S.rowMain },
+					h(
+						'div',
+						{ style: S.rowTitle },
+						h('span', { style: S.cardTitle }, a.name),
+						h('span', { style: S.tag }, platformLabel),
+						h('span', { style: { ...S.tag, opacity: a.enabled ? 0.9 : 0.5 } }, a.enabled ? '已启用' : '已停用'),
+					),
+					h(
+						'div',
+						{ style: S.rowMeta },
+						h('span', { style: S.mono }, a.robot_key),
+						' · 群 ',
+						a.conversation_id || '不限',
+						' · 会话 ',
+						a.session_id || '首条消息后创建',
+					),
+					h(
+						'div',
+						{ style: { display: 'flex', gap: 12, flexWrap: 'wrap' } },
+						required.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
+						optional.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
+					),
+					a.credentials?.outboundWebhook
+						? null
+						: h('div', { style: S.hint }, '没配出站 Webhook：回复走回调里带的临时地址，长任务可能因过期发不出去。'),
+					missing.length
+						? h('div', { style: { ...S.hint, color: 'rgba(192,57,43,.9)', opacity: 1 } }, `缺 ${missing.map((c) => c.label).join('、')}，现在的回调会被拒（401）。`)
+						: null,
 				),
 				h(
 					'div',
-					{ style: S.cardMeta },
-					h('div', { style: S.mono }, a.robot_key),
-					h('div', null, `群 ${a.conversation_id || '不限（哪个群 @ 都接）'}`),
-					h('div', null, `会话 ${a.session_id || '首条消息后自动创建'}`),
-				),
-				h(
-					'div',
-					{ style: { display: 'flex', gap: 12, flexWrap: 'wrap' } },
-					required.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
-					optional.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
-				),
-				a.credentials?.outboundWebhook
-					? null
-					: h('div', { style: S.hint }, '没配出站 Webhook：回复走回调里带的临时地址，长任务可能因过期发不出去。'),
-				missing.length
-					? h('div', { style: { ...S.hint, color: 'rgba(192,57,43,.9)', opacity: 1 } }, `缺 ${missing.map((c) => c.label).join('、')}，现在的回调会被拒（401）。`)
-					: null,
-				h(
-					'div',
-					{ style: S.cardFoot },
+					{ style: S.rowActions },
 					manage
 						? h('button', { type: 'button', style: S.btn(false, false), onClick: () => onEdit(a) }, '编辑')
 						: null,
@@ -904,7 +972,6 @@ window.__ModuleLoader__.load({
 			const data = state.data
 			const platforms = data?.platforms || []
 			const list = data?.assistants || []
-			const metaOf = (id) => platforms.find((p) => p.id === id)
 			const enabledCount = list.filter((a) => a.enabled).length
 
 			const banners = []
@@ -913,20 +980,8 @@ window.__ModuleLoader__.load({
 			if (data && !data.manage) {
 				banners.push(h('div', { key: 'ro', style: S.banner('ok') }, '你不是这个团队的 owner，只能查看，不能新增或改动。'))
 			}
-			if (data?.inbound?.local) {
-				banners.push(
-					h(
-						'div',
-						{ key: 'local', style: S.banner('warn') },
-						h('div', null, '回调地址是本机地址：只有「飞书 + HTTP 回调」会受影响，钉钉走 Stream 长连接不受影响。'),
-						h(
-							'div',
-							{ style: { marginTop: 6, fontSize: 12.5, opacity: 0.8 } },
-							'飞书本地联调同理需要内网穿透（ngrok / cpolar 等）把域名指到宿主 9700，再用 ASSISTANT_INBOUND_BASE 配成对外域名；钉钉只要把「机器人 → 消息接收模式」选成 Stream 即可。',
-						),
-					),
-				)
-			}
+			// 「回调地址是本机地址」这类说明只对飞书有意义，已收进飞书分组的「接入说明」，
+			// 不再用整屏横幅占位。
 
 			const header = h(
 				'div',
@@ -934,71 +989,27 @@ window.__ModuleLoader__.load({
 				h('h1', { style: S.h1 }, '助理'),
 				h('span', { style: S.sub }, data ? `${data.teamName} · ${list.length} 个助理，${enabledCount} 个启用` : '机器人 ↔ 会话'),
 				h('div', { style: S.spacer }),
-				data?.manage && !state.draft
-					? h('button', { type: 'button', style: S.btn(true, false), onClick: () => startCreate() }, '新增助理')
-					: null,
 				h('button', { type: 'button', style: S.btn(false, false), disabled: state.loading, onClick: refresh }, state.loading ? '读取中…' : '刷新'),
 			)
 
-			const inboundBox =
-				data && data.manage && !state.draft
-					? h(
-							'div',
-							{ style: S.panel },
-							h('div', { style: { fontSize: 13, fontWeight: 500, marginBottom: 8 } }, '回调地址'),
-							h(CopyRow, { label: '钉钉（走 Stream 时不需要）', value: data.inbound.dingtalk }),
-							h(CopyRow, { label: '飞书（必须公网可达）', value: data.inbound.feishu }),
-							h(
-								'div',
-								{ style: S.hint },
-								'钉钉默认走 Stream：服务端主动连钉钉网关，消息从长连接推下来，本机也能收。只有把应用配成 HTTP 回调模式时，才需要把上面的钉钉地址填到「事件订阅」。',
-							),
-						)
-					: null
-
-			// 进面板先看到「支持哪些平台」，点卡片直接带着平台进入新建表单
-			const platformBox =
-				data && !state.draft
-					? h(
-							'div',
-							{ style: S.section },
-							h('h2', { style: S.h2 }, '支持的接入平台'),
-							h(
-								'div',
-								{ style: S.platformGrid },
-								platforms.map((p) =>
-									h(PlatformCard, {
-										key: p.id,
-										meta: p,
-										count: list.filter((a) => a.platform === p.id).length,
-										manage: data.manage,
-										onPick: startCreate,
-									}),
-								),
-							),
-						)
-					: null
-
-			const cards = list.length
-				? h(
-						'div',
-						{ style: S.grid },
-						list.map((a) =>
-							h(AssistantCard, {
-								key: a.id,
-								a,
-								meta: metaOf(a.platform),
-								manage: data.manage,
-								busy: state.busy,
-								onEdit: startEdit,
-								onMessages: openMessages,
-								onToggle,
-								onTest,
-								onDelete,
-							}),
-						),
-					)
-				: h('div', { style: S.empty }, data?.manage ? '还没有助理。点上面「接入钉钉 / 接入飞书」，一个助理对应一个机器人和一个会话。' : '还没有助理。')
+			// 按平台分组直接铺开：组标题一行（名称 + 数量 + 接入说明 + 接入按钮），
+			// 下面是该平台已接入的助理。空平台只留一行虚框提示，不占整块版面。
+			const groups = platforms.map((p) =>
+				h(PlatformGroup, {
+					key: p.id,
+					meta: p,
+					items: list.filter((a) => a.platform === p.id),
+					manage: data?.manage,
+					inbound: data?.inbound,
+					busy: state.busy,
+					onAdd: startCreate,
+					onEdit: startEdit,
+					onMessages: openMessages,
+					onToggle,
+					onTest,
+					onDelete,
+				}),
+			)
 
 			return h(
 				'div',
@@ -1018,13 +1029,9 @@ window.__ModuleLoader__.load({
 								onSave: save,
 								onCancel: () => set({ draft: null }),
 							})
-						: h('div', null, platformBox, inboundBox),
-					h(
-						'div',
-						{ style: S.section },
-						h('h2', { style: S.h2 }, '助理列表'),
-						state.loading && !data ? h('div', { style: S.empty }, '读取中…') : cards,
-					),
+						: state.loading && !data
+							? h('div', { style: S.empty }, '读取中…')
+							: groups,
 					state.messagesFor
 						? h(Messages, {
 								assistant: state.messagesFor,
