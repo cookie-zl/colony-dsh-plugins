@@ -19,7 +19,7 @@
 单个插件直接指目录（开发时最顺手）：
 
 ```bash
-dsh plugin add /path/to/colony-plugins/packages/workspace-guard
+dsh plugin add /path/to/colony-dsh-plugins/packages/workspace-guard
 ```
 
 打成 tarball 再装（跟镜像里的做法一致）：
