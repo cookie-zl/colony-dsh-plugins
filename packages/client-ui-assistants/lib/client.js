@@ -337,6 +337,17 @@ window.__ModuleLoader__.load({
 			return data.messages || []
 		}
 
+		/** 拉某个助理的群对话列表（一个群一条 dsh 会话）。 */
+		async function loadThreads(id) {
+			const res = await fetch(`/__auth/api/assistants/threads?id=${encodeURIComponent(id)}`, {
+				credentials: 'same-origin',
+				headers: { Accept: 'application/json' },
+			})
+			const data = await res.json().catch(() => ({}))
+			if (!res.ok) throw new Error(data.error || `读取失败（HTTP ${res.status}）`)
+			return data.threads || []
+		}
+
 		/** 复制到剪贴板。非 https 下 clipboard API 可能不可用，退回选中文本让人手抄。 */
 		async function copyText(text, el) {
 			try {
@@ -488,13 +499,17 @@ window.__ModuleLoader__.load({
 			return { color: 'rgba(192,57,43,.95)' }
 		}
 
-		/** 一行助理：左边信息（名称 / 机器人 / 群 / 会话 / 凭据），右边操作。 */
+		/** 一行助理：左边信息（名称 / 机器人 / 服务范围 / 群对话数 / 凭据），右边操作。 */
 		function AssistantCard({ a, meta, manage, busy, onEdit, onMessages, onToggle, onTest, onDelete }) {
 			const platformLabel = meta ? meta.label : a.platform
 			// 必填项没配 = 回调一定被拒，用红点；可选项用灰点提示缺省行为
 			const required = (meta?.credentials || []).filter((c) => c.required)
 			const optional = (meta?.credentials || []).filter((c) => !c.required)
 			const missing = required.filter((c) => !a.credentials?.[c.field])
+			const channels = (a.channels || []).map((c) => c.conversation_id).filter(Boolean)
+			// 一个机器人可以服务多个群，每个群一条会话；这里只报数量，明细进「沟通记录」
+			const scope = channels.length ? `${channels.length} 个指定群` : '不限群'
+			const threads = Number(a.threads || 0)
 			return h(
 				'div',
 				{ style: S.row },
@@ -512,10 +527,10 @@ window.__ModuleLoader__.load({
 						'div',
 						{ style: S.rowMeta },
 						h('span', { style: S.mono }, a.robot_key),
-						' · 群 ',
-						a.conversation_id || '不限',
-						' · 会话 ',
-						a.session_id || '首条消息后创建',
+						' · ',
+						scope,
+						' · 群对话 ',
+						threads ? `${threads} 条` : '首条消息后创建',
 					),
 					h(
 						'div',
@@ -674,12 +689,16 @@ window.__ModuleLoader__.load({
 					),
 					h(
 						Field,
-						{ label: '群 ID（可选）', hint: '留空 = 这个机器人被拉进的任何一个群里 @ 都会处理；填了就只认这个群。' },
-						h('input', {
-							style: S.input,
-							value: draft.conversationId,
-							placeholder: '留空=不限群',
-							onChange: (e) => set({ conversationId: e.target.value }),
+						{
+							label: '只服务这些群（可选）',
+							hint: '留空 = 机器人被拉进的任何群里 @ 都会处理；填了就只认列出来的群，多个用逗号或换行分隔。每个群各自一条对话，上下文互不影响。',
+						},
+						h('textarea', {
+							style: { ...S.input, minHeight: 44, resize: 'vertical' },
+							value: draft.channels,
+							rows: 1,
+							placeholder: '群 ID，多个用逗号分隔；留空=不限群',
+							onChange: (e) => set({ channels: e.target.value }),
 						}),
 					),
 				),
@@ -810,8 +829,19 @@ window.__ModuleLoader__.load({
 			)
 		}
 
-		/** 沟通记录面板：像聊天一样看每一轮的输入、思考与输出。 */
-		function Messages({ assistant, messages, loading, onClose, onRefresh }) {
+		/** 群线程的可读名：群名优先，没有就退化成会话 id 尾部。 */
+		function threadLabelOf(t) {
+			if (t?.title) return t.title
+			const cid = String(t?.conversation_id || '')
+			if (!cid) return '未分群'
+			return `群 ${cid.length > 10 ? `…${cid.slice(-6)}` : cid}`
+		}
+
+		/** 沟通记录面板：先按群分（一个群一条对话），再看每一轮的输入、思考与输出。 */
+		function Messages({ assistant, messages, threads, threadFilter, loading, busy, onClose, onRefresh, onFilter, onReset }) {
+			const current = threadFilter ? threads.find((t) => t.id === threadFilter) : null
+			// 前端过滤：一次拉的是最近 50 条，按群筛不用再打一次接口
+			const rows = threadFilter ? messages.filter((m) => m.thread_id === threadFilter) : messages
 			return h(
 				'div',
 				{ style: S.panel },
@@ -819,16 +849,53 @@ window.__ModuleLoader__.load({
 					'div',
 					{ style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 } },
 					h('div', { style: { fontSize: 14, fontWeight: 500 } }, `「${assistant.name}」的沟通记录`),
-					h('span', { style: S.tag }, `${messages.length} 轮`),
+					h('span', { style: S.tag }, `${rows.length} 轮`),
 					h('div', { style: S.spacer }),
 					h('button', { type: 'button', style: S.btn(false, false), disabled: loading, onClick: onRefresh }, loading ? '读取中…' : '刷新'),
 					h('button', { type: 'button', style: S.btn(false, false), onClick: onClose }, '收起'),
 				),
+				h(
+					'div',
+					{ style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 } },
+					h('button', { type: 'button', style: S.btn(threadFilter === '', false), onClick: () => onFilter('') }, `全部 ${messages.length}`),
+					threads.map((t) =>
+						h(
+							'button',
+							{
+								key: t.id,
+								type: 'button',
+								style: S.btn(threadFilter === t.id, false),
+								title: t.conversation_id || '未分群对话（模拟消息）',
+								onClick: () => onFilter(t.id),
+							},
+							`${threadLabelOf(t)} · ${Number(t.message_count || 0)} 轮`,
+						),
+					),
+				),
+				current
+					? h(
+							'div',
+							{ style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 } },
+							h('span', { style: S.hint }, `${current.conversation_id || '未分群对话'} · ${current.session_id ? '会话已建立' : '会话待建立'}`),
+							h('div', { style: S.spacer }),
+							h(
+								'button',
+								{
+									type: 'button',
+									style: S.btn(false, false),
+									disabled: Boolean(busy) || !current.session_id,
+									onClick: () => onReset(current),
+									title: '只断开会话绑定，历史记录保留；这个群下一条 @ 会开新会话',
+								},
+								busy ? '处理中…' : '重新开始这个群的对话',
+							),
+						)
+					: null,
 				h('div', { style: S.hint }, '最新一轮在最上面。每轮包含群里的提问、模型思考过程（点开看）和最终回复。'),
 				loading
 					? h('div', { style: S.empty }, '读取中…')
-					: messages.length
-						? h('div', null, messages.map((m) => h(MessageTurn, { key: m.id, m })))
+					: rows.length
+						? h('div', null, rows.map((m) => h(MessageTurn, { key: m.id, m })))
 						: h('div', { style: S.empty }, '还没有记录。群里 @ 一下机器人，或者在卡片上点「测试发送」。'),
 			)
 		}
@@ -844,6 +911,8 @@ window.__ModuleLoader__.load({
 				busy: '',
 				messagesFor: null,
 				messages: [],
+				threads: [],
+				threadFilter: '',
 				messagesLoading: false,
 			})
 			const set = (patch) => setState((s) => ({ ...s, ...patch }))
@@ -886,7 +955,7 @@ window.__ModuleLoader__.load({
 						platform: platformId || (state.data?.platforms?.[0] || { id: 'dingtalk' }).id,
 						name: '',
 						robotKey: '',
-						conversationId: '',
+						channels: '',
 						systemPrompt: '',
 						credentials: {},
 					},
@@ -901,7 +970,7 @@ window.__ModuleLoader__.load({
 						platform: a.platform,
 						name: a.name,
 						robotKey: a.robot_key,
-						conversationId: a.conversation_id || '',
+						channels: (a.channels || []).map((c) => c.conversation_id).filter(Boolean).join(','),
 						systemPrompt: a.system_prompt || '',
 						credentials: {},
 					},
@@ -919,7 +988,8 @@ window.__ModuleLoader__.load({
 							action: 'update',
 							id: d.id,
 							name: d.name.trim(),
-							conversationId: d.conversationId.trim(),
+							// 空串 = 不限群；非空时服务端按逗号/换行拆成数组
+							channels: d.channels.trim(),
 							systemPrompt: d.systemPrompt.trim(),
 							credentials: d.credentials,
 						}
@@ -928,7 +998,7 @@ window.__ModuleLoader__.load({
 							platform: d.platform,
 							name: d.name.trim(),
 							robotKey: d.robotKey.trim(),
-							conversationId: d.conversationId.trim(),
+							channels: d.channels.trim(),
 							systemPrompt: d.systemPrompt.trim(),
 							credentials: d.credentials,
 						}
@@ -937,9 +1007,10 @@ window.__ModuleLoader__.load({
 			}
 
 			const openMessages = async (a) => {
-				set({ messagesFor: a, messages: [], messagesLoading: true })
+				set({ messagesFor: a, messages: [], threads: [], threadFilter: '', messagesLoading: true })
 				try {
-					set({ messages: await loadMessages(a.id), messagesLoading: false })
+					const [messages, threads] = await Promise.all([loadMessages(a.id), loadThreads(a.id)])
+					set({ messages, threads, messagesLoading: false })
 				} catch (err) {
 					set({ messagesLoading: false, error: err.message })
 				}
@@ -950,9 +1021,25 @@ window.__ModuleLoader__.load({
 				if (!a) return
 				set({ messagesLoading: true })
 				try {
-					set({ messages: await loadMessages(a.id), messagesLoading: false })
+					const [messages, threads] = await Promise.all([loadMessages(a.id), loadThreads(a.id)])
+					set({ messages, threads, messagesLoading: false })
 				} catch (err) {
 					set({ messagesLoading: false, error: err.message })
+				}
+			}
+
+			/** 让某个群重新开始对话：只断开会话，历史不动。 */
+			const onResetThread = async (thread) => {
+				const a = state.messagesFor
+				if (!a) return
+				if (!window.confirm(`让「${threadLabelOf(thread)}」重新开始对话？历史记录保留，这个群的下一条消息会新建一条会话。`)) return
+				const data = await act({ action: 'resetThread', id: a.id, threadId: thread.id }, 'reset', '已重置，这个群下一条消息会开新会话。')
+				if (!data) return
+				try {
+					const [messages, threads] = await Promise.all([loadMessages(a.id), loadThreads(a.id)])
+					set({ messages, threads })
+				} catch (err) {
+					set({ error: err.message })
 				}
 			}
 
@@ -1036,9 +1123,14 @@ window.__ModuleLoader__.load({
 						? h(Messages, {
 								assistant: state.messagesFor,
 								messages: state.messages,
+								threads: state.threads,
+								threadFilter: state.threadFilter,
 								loading: state.messagesLoading,
-								onClose: () => set({ messagesFor: null, messages: [] }),
+								busy: state.busy,
+								onClose: () => set({ messagesFor: null, messages: [], threads: [], threadFilter: '' }),
 								onRefresh: reloadMessages,
+								onFilter: (threadFilter) => set({ threadFilter }),
+								onReset: onResetThread,
 							})
 						: null,
 				),
