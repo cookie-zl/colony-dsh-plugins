@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-hello",
+  "name": "@colony-agents/dsh-hello",
   "version": "0.1.0",
   "description": "DSH 增量插件样板：注册一个 hello_dsh 工具",
   "type": "module",

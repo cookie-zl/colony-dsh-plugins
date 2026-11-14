@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-client-ui-assistants",
+  "name": "@colony-agents/dsh-client-ui-assistants",
   "version": "0.1.0",
   "description": "在 dsh 侧栏注册「助理」面板：把钉钉/飞书机器人接到一个固定会话上",
   "type": "module",

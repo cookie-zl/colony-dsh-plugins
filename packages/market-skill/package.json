@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-market-skill",
+  "name": "@colony-agents/dsh-market-skill",
   "version": "0.1.0",
   "description": "从控制面 API 加载团队技能，容器内不落任何技能文件",
   "type": "module",

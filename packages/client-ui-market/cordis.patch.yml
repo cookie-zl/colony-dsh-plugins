@@ -3,4 +3,4 @@
 # 认成「已启用的 Loader entry」，进而把 lib/client.js 下发给浏览器。
 - insert:
     - id: client-ui-market
-      name: '@colony/dsh-client-ui-market'
+      name: '@colony-agents/dsh-client-ui-market'

@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-client-ui-market",
+  "name": "@colony-agents/dsh-client-ui-market",
   "version": "0.1.0",
   "description": "在 dsh 侧栏注册「市场」面板：技能与连接器的浏览、安装、启停",
   "type": "module",

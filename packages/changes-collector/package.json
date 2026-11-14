@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-changes-collector",
+  "name": "@colony-agents/dsh-changes-collector",
   "version": "0.1.0",
   "description": "把 workspace/changes 的轮级摘要与逐文件 diff 落成卷里的 JSON，供控制面收进对象层",
   "type": "module",

@@ -1,5 +1,5 @@
 {
-  "name": "@colony/dsh-workspace-guard",
+  "name": "@colony-agents/dsh-workspace-guard",
   "version": "0.1.0",
   "description": "把用户新建的工作区强制落在 /workspace/<name>，让会话 cwd 与产物都在持久挂载里",
   "type": "module",
