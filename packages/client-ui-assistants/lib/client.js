@@ -87,7 +87,6 @@ window.__ModuleLoader__.load({
 			},
 			rowMain: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 },
 			rowTitle: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-			rowMeta: { fontSize: 12, opacity: 0.6, lineHeight: 1.6, wordBreak: 'break-all' },
 			rowActions: {
 				display: 'flex',
 				alignItems: 'center',
@@ -114,6 +113,45 @@ window.__ModuleLoader__.load({
 				border: primary ? '1px solid transparent' : '1px solid rgba(127,127,127,.3)',
 				background: primary ? 'rgba(60,120,255,.92)' : 'transparent',
 				color: primary ? '#fff' : danger ? '#c0392b' : 'inherit',
+			}),
+			/**
+			 * 行内轻按钮：无边框、低对比，鼠标移上去才加深。
+			 * 一行五个带边框的按钮会把「看信息」的主次彻底盖掉（Linear 那边的做法也是行内 ghost）。
+			 */
+			ghostBtn: (danger) => ({
+				font: 'inherit',
+				fontSize: 12.5,
+				padding: '3px 7px',
+				borderRadius: 6,
+				cursor: 'pointer',
+				border: '1px solid transparent',
+				background: 'transparent',
+				color: danger ? 'rgba(192,57,43,.9)' : 'inherit',
+				opacity: 0.72,
+				whiteSpace: 'nowrap',
+			}),
+			/** 状态点：启用绿、停用灰。一个点比「已启用」两个字安静得多。 */
+			statusDot: (on) => ({
+				width: 6,
+				height: 6,
+				borderRadius: '50%',
+				flex: 'none',
+				background: on ? 'rgba(60,160,90,.95)' : 'rgba(127,127,127,.4)',
+			}),
+			warn: { fontSize: 11.5, color: 'rgba(192,57,43,.9)', whiteSpace: 'nowrap' },
+			threadMore: { marginLeft: 13, fontSize: 11, opacity: 0.45 },
+			/** 沟通记录里的群筛选片：选中才有浅色底，未选中就是一段文字。 */
+			chip: (active) => ({
+				font: 'inherit',
+				fontSize: 12,
+				padding: '3px 9px',
+				borderRadius: 999,
+				cursor: 'pointer',
+				border: '1px solid transparent',
+				background: active ? 'rgba(60,120,255,.14)' : 'transparent',
+				color: active ? 'rgba(60,120,255,.95)' : 'inherit',
+				opacity: active ? 1 : 0.6,
+				whiteSpace: 'nowrap',
 			}),
 			panel: {
 				marginTop: 16,
@@ -163,14 +201,6 @@ window.__ModuleLoader__.load({
 							: 'rgba(127,127,127,.07)',
 			}),
 			empty: { fontSize: 13, opacity: 0.55, padding: '18px 4px' },
-			dot: (ok) => ({
-				display: 'inline-block',
-				width: 6,
-				height: 6,
-				borderRadius: 999,
-				marginRight: 5,
-				background: ok ? 'rgba(60,160,90,.95)' : 'rgba(192,57,43,.9)',
-			}),
 			table: { width: '100%', borderCollapse: 'collapse', fontSize: 12.5 },
 			th: { textAlign: 'left', fontWeight: 500, opacity: 0.55, padding: '6px 8px', borderBottom: '1px solid rgba(127,127,127,.2)' },
 			td: { padding: '6px 8px', borderBottom: '1px solid rgba(127,127,127,.12)', verticalAlign: 'top' },
@@ -178,13 +208,6 @@ window.__ModuleLoader__.load({
 			group: { marginTop: 24 },
 			groupHead: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 },
 			groupTitle: { fontSize: 14, fontWeight: 500 },
-			groupEmpty: {
-				fontSize: 12.5,
-				opacity: 0.5,
-				padding: '14px 15px',
-				border: '1px dashed rgba(127,127,127,.28)',
-				borderRadius: 12,
-			},
 			/** 文字按钮：接入说明这类次要动作，不要抢主按钮的视觉重量。 */
 			linkBtn: {
 				font: 'inherit',
@@ -278,6 +301,32 @@ window.__ModuleLoader__.load({
 			},
 			thinkingSummary: { cursor: 'pointer', opacity: 0.65, fontSize: 11.5, userSelect: 'none' },
 			thinkingBody: { marginTop: 7, whiteSpace: 'pre-wrap', lineHeight: 1.75, opacity: 0.78 },
+			/** 助理行里的群列表：一个群一行，点进去就是那个群的沟通记录。 */
+			threadList: { display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 },
+			threadRow: {
+				display: 'flex',
+				alignItems: 'center',
+				gap: 8,
+				width: '100%',
+				padding: '3px 6px',
+				borderRadius: 6,
+				border: '1px solid transparent',
+				background: 'transparent',
+				color: 'inherit',
+				font: 'inherit',
+				fontSize: 12,
+				textAlign: 'left',
+				cursor: 'pointer',
+			},
+			threadName: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+			threadMeta: { marginLeft: 'auto', opacity: 0.5, fontSize: 11, whiteSpace: 'nowrap' },
+			threadDot: (live) => ({
+				width: 5,
+				height: 5,
+				borderRadius: '50%',
+				flex: 'none',
+				background: live ? 'rgba(60,160,90,.9)' : 'rgba(127,127,127,.45)',
+			}),
 		}
 
 		/** 侧栏图标：一条对话气泡 + 小天线，与 dsh 自带线性图标同尺寸。 */
@@ -401,27 +450,21 @@ window.__ModuleLoader__.load({
 			)
 		}
 
-		/** 凭据状态小标：绿点=已配，红点=没配。 */
-		function CredDot({ ok, label }) {
-			return h('span', { style: { fontSize: 11.5, opacity: 0.72, whiteSpace: 'nowrap' } }, h('span', { style: S.dot(ok) }), label)
-		}
-
 		/** 平台标：用一个字，避免把第三方 logo 塞进产品界面。 */
 		function PlatformIcon({ id }) {
 			return h('div', { style: S.platformIcon(id), 'aria-hidden': 'true' }, id === 'dingtalk' ? '钉' : '飞')
 		}
 
 		/**
-		 * 一个平台分组：标题行（图标 + 名称 + 数量 + 接入说明 + 接入按钮）+ 该平台下的助理卡片。
+		 * 一个平台分组：标题行（图标 + 名称 + 数量 + 接入说明）+ 该平台下的助理卡片。
 		 *
-		 * 为什么不做「支持哪些平台」的大卡片：只有两个平台时，那等于两块占满首屏的说明文字。
-		 * 用户每天来这个面板是为了看/改已有助理，不是读接入文档。所以「有什么」直接摊开，
-		 * 「怎么接」收进 details——需要时点开，不需要时不占地方。
+		 * 这里**没有**「接入 xx」按钮：新增统一走页头那一个入口，平台在表单里选。
+		 * 两个平台各放一个按钮时，「新增」这个动作被拆成两处，平台一多就没法收拾。
 		 *
 		 * @param {object} props 平台元信息、该平台下的助理、权限与操作回调
 		 * @returns {object} 分组节点
 		 */
-		function PlatformGroup({ meta, items, manage, inbound, busy, onAdd, onEdit, onMessages, onToggle, onTest, onDelete }) {
+		function PlatformGroup({ meta, items, manage, inbound, busy, onEdit, onMessages, onToggle, onTest, onDelete }) {
 			const [open, setOpen] = React.useState(false)
 			const count = items.length
 			const isDing = meta.id === 'dingtalk'
@@ -452,7 +495,6 @@ window.__ModuleLoader__.load({
 						},
 						open ? '接入说明 ▾' : '接入说明 ▸',
 					),
-					manage ? h('button', { type: 'button', style: S.btn(true, false), onClick: () => onAdd(meta.id) }, `接入${meta.label}`) : null,
 				),
 				open
 					? h(
@@ -475,6 +517,8 @@ window.__ModuleLoader__.load({
 									),
 						)
 					: null,
+				// 空平台只留标题行（标题右侧已经写了「未接入」），
+				// 再补一句「还没有 xx 助理」只是把同一件事说两遍。
 				count
 					? h(
 							'div',
@@ -483,11 +527,7 @@ window.__ModuleLoader__.load({
 								h(AssistantCard, { key: a.id, a, meta, manage, busy, onEdit, onMessages, onToggle, onTest, onDelete }),
 							),
 						)
-					: h(
-							'div',
-							{ style: S.groupEmpty },
-							manage ? `还没有${meta.label}助理。点上方右侧「接入${meta.label}」建一个。` : `还没有${meta.label}助理。`,
-						),
+					: null,
 			)
 		}
 
@@ -499,17 +539,20 @@ window.__ModuleLoader__.load({
 			return { color: 'rgba(192,57,43,.95)' }
 		}
 
-		/** 一行助理：左边信息（名称 / 机器人 / 服务范围 / 群对话数 / 凭据），右边操作。 */
+		/**
+		 * 一行助理：名称与状态、它服务的那几个群、右侧操作。
+		 *
+		 * 这里刻意不显示机器人标识、平台名和逐项凭据点：
+		 *  - 平台已经由分组标题说清楚了，重复一遍只是加噪音；
+		 *  - 机器人标识是唯一键，只有在编辑表单里需要核对；
+		 *  - 凭据齐全时不该有任何提示，缺了才用一句话报警（正常状态保持安静）。
+		 */
 		function AssistantCard({ a, meta, manage, busy, onEdit, onMessages, onToggle, onTest, onDelete }) {
-			const platformLabel = meta ? meta.label : a.platform
-			// 必填项没配 = 回调一定被拒，用红点；可选项用灰点提示缺省行为
-			const required = (meta?.credentials || []).filter((c) => c.required)
-			const optional = (meta?.credentials || []).filter((c) => !c.required)
-			const missing = required.filter((c) => !a.credentials?.[c.field])
-			const channels = (a.channels || []).map((c) => c.conversation_id).filter(Boolean)
-			// 一个机器人可以服务多个群，每个群一条会话；这里只报数量，明细进「沟通记录」
-			const scope = channels.length ? `${channels.length} 个指定群` : '不限群'
-			const threads = Number(a.threads || 0)
+			// 必填项没配 = 回调一定被拒。这是唯一值得在列表里说的状态。
+			const missing = (meta?.credentials || []).filter((c) => c.required && !a.credentials?.[c.field])
+			const threadList = a.threadList || []
+			const shown = threadList.slice(0, 4)
+			const rest = threadList.length - shown.length
 			return h(
 				'div',
 				{ style: S.row },
@@ -519,49 +562,50 @@ window.__ModuleLoader__.load({
 					h(
 						'div',
 						{ style: S.rowTitle },
+						h('span', { style: S.statusDot(Boolean(a.enabled)) }),
 						h('span', { style: S.cardTitle }, a.name),
-						h('span', { style: S.tag }, platformLabel),
-						h('span', { style: { ...S.tag, opacity: a.enabled ? 0.9 : 0.5 } }, a.enabled ? '已启用' : '已停用'),
+						missing.length
+							? h('span', { style: S.warn, title: `缺 ${missing.map((c) => c.label).join('、')}，回调会被拒` }, '凭据未配全')
+							: null,
 					),
-					h(
-						'div',
-						{ style: S.rowMeta },
-						h('span', { style: S.mono }, a.robot_key),
-						' · ',
-						scope,
-						' · 群对话 ',
-						threads ? `${threads} 条` : '首条消息后创建',
-					),
-					h(
-						'div',
-						{ style: { display: 'flex', gap: 12, flexWrap: 'wrap' } },
-						required.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
-						optional.map((c) => h(CredDot, { key: c.field, ok: Boolean(a.credentials?.[c.field]), label: c.label })),
-					),
-					a.credentials?.outboundWebhook
-						? null
-						: h('div', { style: S.hint }, '没配出站 Webhook：回复走回调里带的临时地址，长任务可能因过期发不出去。'),
-					missing.length
-						? h('div', { style: { ...S.hint, color: 'rgba(192,57,43,.9)', opacity: 1 } }, `缺 ${missing.map((c) => c.label).join('、')}，现在的回调会被拒（401）。`)
-						: null,
+					threadList.length
+						? h(
+								'div',
+								{ style: S.threadList },
+								shown.map((t) =>
+									h(
+										'button',
+										{
+											key: t.id,
+											type: 'button',
+											style: S.threadRow,
+											title: `${t.conversation_id || '未分群对话（测试消息）'} · 点开看这个群的沟通记录`,
+											onClick: () => onMessages(a, t.id),
+										},
+										h('span', { style: S.threadDot(t.has_session) }),
+										h('span', { style: S.threadName }, threadLabelOf(t)),
+										h('span', { style: S.threadMeta }, `${Number(t.message_count || 0)} 轮 · ${whenText(t.last_active_at)}`),
+									),
+								),
+								rest > 0 ? h('span', { style: S.threadMore }, `+${rest}`) : null,
+							)
+						: h('div', { style: { ...S.hint, marginTop: 4 } }, '还没有群聊过'),
 				),
 				h(
 					'div',
 					{ style: S.rowActions },
-					manage
-						? h('button', { type: 'button', style: S.btn(false, false), onClick: () => onEdit(a) }, '编辑')
-						: null,
-					h('button', { type: 'button', style: S.btn(false, false), onClick: () => onMessages(a) }, '沟通记录'),
+					manage ? h('button', { type: 'button', style: S.ghostBtn(false), onClick: () => onEdit(a) }, '编辑') : null,
+					h('button', { type: 'button', style: S.ghostBtn(false), onClick: () => onMessages(a) }, '沟通记录'),
 					manage
 						? h(
 								'button',
 								{
 									type: 'button',
-									style: S.btn(false, false),
+									style: S.ghostBtn(false),
 									disabled: Boolean(busy),
 									onClick: () => onTest(a),
 								},
-								busy === `test:${a.id}` ? '跑 dsh 中…' : '测试发送',
+								busy === `test:${a.id}` ? '跑 dsh 中…' : '测试',
 							)
 						: null,
 					manage
@@ -569,16 +613,14 @@ window.__ModuleLoader__.load({
 								'button',
 								{
 									type: 'button',
-									style: S.btn(false, false),
+									style: S.ghostBtn(false),
 									disabled: Boolean(busy),
 									onClick: () => onToggle(a, !a.enabled),
 								},
 								a.enabled ? '停用' : '启用',
 							)
 						: null,
-					manage
-						? h('button', { type: 'button', style: S.btn(false, true), onClick: () => onDelete(a) }, '删除')
-						: null,
+					manage ? h('button', { type: 'button', style: S.ghostBtn(true), onClick: () => onDelete(a) }, '删除') : null,
 				),
 			)
 		}
@@ -837,8 +879,13 @@ window.__ModuleLoader__.load({
 			return `群 ${cid.length > 10 ? `…${cid.slice(-6)}` : cid}`
 		}
 
-		/** 沟通记录面板：先按群分（一个群一条对话），再看每一轮的输入、思考与输出。 */
-		function Messages({ assistant, messages, threads, threadFilter, loading, busy, onClose, onRefresh, onFilter, onReset }) {
+		/**
+		 * 沟通记录面板：先按群分（一个群一条对话），再看每一轮的输入、思考与输出。
+		 *
+		 * 顶部不再写「最新一轮在最上面，包含提问/思考/回复」这类说明——
+		 * 对话流本身就是最好的说明书，看不懂说明排版有问题，不是缺一行字。
+		 */
+		function Messages({ messages, threads, threadFilter, loading, busy, onClose, onRefresh, onFilter, onReset }) {
 			const current = threadFilter ? threads.find((t) => t.id === threadFilter) : null
 			// 前端过滤：一次拉的是最近 50 条，按群筛不用再打一次接口
 			const rows = threadFilter ? messages.filter((m) => m.thread_id === threadFilter) : messages
@@ -848,55 +895,48 @@ window.__ModuleLoader__.load({
 				h(
 					'div',
 					{ style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 } },
-					h('div', { style: { fontSize: 14, fontWeight: 500 } }, `「${assistant.name}」的沟通记录`),
-					h('span', { style: S.tag }, `${rows.length} 轮`),
+					h('div', { style: { fontSize: 14, fontWeight: 500 } }, '沟通记录'),
+					h('span', { style: S.sub }, `${rows.length} 轮`),
 					h('div', { style: S.spacer }),
-					h('button', { type: 'button', style: S.btn(false, false), disabled: loading, onClick: onRefresh }, loading ? '读取中…' : '刷新'),
-					h('button', { type: 'button', style: S.btn(false, false), onClick: onClose }, '收起'),
+					current
+						? h(
+								'button',
+								{
+									type: 'button',
+									style: S.ghostBtn(false),
+									disabled: Boolean(busy) || !current.session_id,
+									onClick: () => onReset(current),
+									title: '只断开会话绑定，历史记录保留；这个群下一条 @ 会开新会话',
+								},
+								'重新开始对话',
+							)
+						: null,
+					h('button', { type: 'button', style: S.ghostBtn(false), disabled: loading, onClick: onRefresh }, loading ? '读取中…' : '刷新'),
+					h('button', { type: 'button', style: S.ghostBtn(false), onClick: onClose }, '收起'),
 				),
 				h(
 					'div',
-					{ style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 } },
-					h('button', { type: 'button', style: S.btn(threadFilter === '', false), onClick: () => onFilter('') }, `全部 ${messages.length}`),
+					{ style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 } },
+					h('button', { type: 'button', style: S.chip(threadFilter === ''), onClick: () => onFilter('') }, `全部 ${messages.length}`),
 					threads.map((t) =>
 						h(
 							'button',
 							{
 								key: t.id,
 								type: 'button',
-								style: S.btn(threadFilter === t.id, false),
+								style: S.chip(threadFilter === t.id),
 								title: t.conversation_id || '未分群对话（模拟消息）',
 								onClick: () => onFilter(t.id),
 							},
-							`${threadLabelOf(t)} · ${Number(t.message_count || 0)} 轮`,
+							`${threadLabelOf(t)} · ${Number(t.message_count || 0)}`,
 						),
 					),
 				),
-				current
-					? h(
-							'div',
-							{ style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 } },
-							h('span', { style: S.hint }, `${current.conversation_id || '未分群对话'} · ${current.session_id ? '会话已建立' : '会话待建立'}`),
-							h('div', { style: S.spacer }),
-							h(
-								'button',
-								{
-									type: 'button',
-									style: S.btn(false, false),
-									disabled: Boolean(busy) || !current.session_id,
-									onClick: () => onReset(current),
-									title: '只断开会话绑定，历史记录保留；这个群下一条 @ 会开新会话',
-								},
-								busy ? '处理中…' : '重新开始这个群的对话',
-							),
-						)
-					: null,
-				h('div', { style: S.hint }, '最新一轮在最上面。每轮包含群里的提问、模型思考过程（点开看）和最终回复。'),
 				loading
 					? h('div', { style: S.empty }, '读取中…')
 					: rows.length
 						? h('div', null, rows.map((m) => h(MessageTurn, { key: m.id, m })))
-						: h('div', { style: S.empty }, '还没有记录。群里 @ 一下机器人，或者在卡片上点「测试发送」。'),
+						: h('div', { style: S.empty }, threadFilter ? '这个群还没有消息。' : '还没有消息。群里 @ 一下机器人试试。'),
 			)
 		}
 
@@ -1006,11 +1046,19 @@ window.__ModuleLoader__.load({
 				if (data) set({ draft: null })
 			}
 
-			const openMessages = async (a) => {
-				set({ messagesFor: a, messages: [], threads: [], threadFilter: '', messagesLoading: true })
+			/**
+			 * 打开沟通记录。带 threadId 时直接进那个群。
+			 *
+			 * @param {object} a 助理
+			 * @param {string} [threadId] 要选中的群线程
+			 */
+			const openMessages = async (a, threadId = '') => {
+				set({ messagesFor: a, messages: [], threads: [], threadFilter: threadId, messagesLoading: true })
 				try {
 					const [messages, threads] = await Promise.all([loadMessages(a.id), loadThreads(a.id)])
-					set({ messages, threads, messagesLoading: false })
+					// 线程可能在两次请求之间被重置/新建：传进来的 id 不在列表里就退回「全部」
+					const exists = threads.some((t) => t.id === threadId)
+					set({ messages, threads, threadFilter: exists ? threadId : '', messagesLoading: false })
 				} catch (err) {
 					set({ messagesLoading: false, error: err.message })
 				}
@@ -1059,7 +1107,6 @@ window.__ModuleLoader__.load({
 			const data = state.data
 			const platforms = data?.platforms || []
 			const list = data?.assistants || []
-			const enabledCount = list.filter((a) => a.enabled).length
 
 			const banners = []
 			if (state.error) banners.push(h('div', { key: 'err', style: S.banner('bad'), role: 'alert' }, state.error))
@@ -1074,8 +1121,16 @@ window.__ModuleLoader__.load({
 				'div',
 				{ style: { ...S.head, marginTop: 2 } },
 				h('h1', { style: S.h1 }, '助理'),
-				h('span', { style: S.sub }, data ? `${data.teamName} · ${list.length} 个助理，${enabledCount} 个启用` : '机器人 ↔ 会话'),
 				h('div', { style: S.spacer }),
+				// 新增只有一个入口：平台在表单里选。每个平台各放一个按钮的话，
+				// 「新增」这个动作就被拆成 N 处，加平台时还得记得再加一个。
+				data?.manage
+					? h(
+							'button',
+							{ type: 'button', style: S.btn(true, false), disabled: Boolean(state.busy), onClick: () => startCreate() },
+							'新增助理',
+						)
+					: null,
 				h('button', { type: 'button', style: S.btn(false, false), disabled: state.loading, onClick: refresh }, state.loading ? '读取中…' : '刷新'),
 			)
 
@@ -1089,7 +1144,6 @@ window.__ModuleLoader__.load({
 					manage: data?.manage,
 					inbound: data?.inbound,
 					busy: state.busy,
-					onAdd: startCreate,
 					onEdit: startEdit,
 					onMessages: openMessages,
 					onToggle,
@@ -1121,7 +1175,6 @@ window.__ModuleLoader__.load({
 							: groups,
 					state.messagesFor
 						? h(Messages, {
-								assistant: state.messagesFor,
 								messages: state.messages,
 								threads: state.threads,
 								threadFilter: state.threadFilter,
